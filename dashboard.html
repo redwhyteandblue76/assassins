@@ -211,11 +211,7 @@ function renderSignup() {
       <input type="text" id="real_name" required>
       <label>Phone:</label>
       <input type="text" id="phone" required>
-      <label>Hall:</label>
-      <select id="hall" required>
-        <option value="25-3">25-3</option>
-        <option value="27-3">27-3</option>
-      </select>
+      <button id="submitBtn">Submit</button>
       <button id="submitBtn">Submit</button>
       <div class="loading" id="loading"><div class="spinner"></div>Submitting...</div>
       <div class="output" id="output"></div>
@@ -231,7 +227,6 @@ function renderSignup() {
     const codename = normalizeCodenameInput(document.getElementById('codename').value);
     const real_name = document.getElementById('real_name').value.trim();
     const phone = document.getElementById('phone').value.trim();
-    const hall = document.getElementById('hall').value;
 
     if (!codename || !real_name || !phone) {
       showOutput(output, 'Please fill in all fields.', 'error');
@@ -245,7 +240,7 @@ function renderSignup() {
     btn.disabled = true;
     setLoading(loading, true);
     try {
-      const data = await callBackend('submitForm', { codename, real_name, phone, hall });
+      const data = await callBackend('submitForm', { codename, real_name, phone });
       setLoading(loading, false);
       btn.disabled = false;
       if (data.success) {
@@ -535,13 +530,12 @@ function renderAdmin() {
     const playersList = document.getElementById('playersList');
     playersList.innerHTML = `
       <table>
-        <tr><th>Codename</th><th>Name</th><th>Status</th><th>Hall</th><th>Action</th></tr>
+        <tr><th>Codename</th><th>Name</th><th>Status</th><th>Action</th></tr>
         ${playersData.players.map(p => `
           <tr>
             <td>${p.codename}</td>
             <td>${p.name}</td>
             <td class="status-${p.status}">${p.status}</td>
-            <td>${p.hall}</td>
             <td>
               <button style="width:auto; padding:4px 8px; font-size:12px;" data-toggle="${p.codename}" data-newstatus="${p.status === 'active' ? 'eliminated' : 'active'}">
                 Mark ${p.status === 'active' ? 'eliminated' : 'active'}
