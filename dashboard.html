@@ -470,19 +470,54 @@ function renderAdmin() {
         <h3 style="margin-top:0;">Recent Log</h3>
         <div id="logList">Loading...</div>
       </div>
+      <div class="form-section" style="border-color:#ff5555; margin-top:40px;">
+        <h3 style="margin-top:0; color:#ff8888;">⚠️ Danger Zone</h3>
+        <label>Reset password:</label>
+        <input type="password" id="resetPasswordInput" autocomplete="off">
+        <button id="resetKeepBtn" style="background-color:#663333;">Reset Game (keep players, clear eliminations)</button>
+        <button id="resetWipeBtn" style="background-color:#663333; margin-top:10px;">Full Wipe (permanently delete all players)</button>
+        <div class="output" id="resetOutput"></div>
+      </div>
     `;
+
+    const SELECT_SETTINGS = {
+      game_status: ['not_started', 'live', 'paused', 'ended'],
+      signup_enabled: ['TRUE', 'FALSE'],
+      dashboard_enabled: ['TRUE', 'FALSE'],
+      eliminate_enabled: ['TRUE', 'FALSE']
+    };
 
     const settingsData = await callBackend('adminGetSettings', { password });
     const settingsList = document.getElementById('settingsList');
     const editableKeys = ['game_status','signup_enabled','dashboard_enabled','eliminate_enabled',
       'signup_off_message','dashboard_off_message','eliminate_off_message','master_lock_message'];
-    settingsList.innerHTML = editableKeys.map(key => `
-      <label>${key}${settingsData.settings.master_lock === 'TRUE' ? '' : ''}</label>
-      <div style="display:flex; gap:6px;">
-        <input type="text" value="${(settingsData.settings[key] || '').replace(/"/g,'&quot;')}" id="setting_${key}" style="flex:1;">
-        <button style="width:auto; padding:10px 14px;" data-key="${key}">Save</button>
-      </div>
-    `).join('') + `<p style="font-size:12px; opacity:0.7; text-align:center; margin-top:8px;">master_lock is currently: <b>${settingsData.settings.master_lock}</b> (edit the Sheet directly to change)</p>`;
+
+    settingsList.innerHTML = editableKeys.map(key => {
+      const currentValue = settingsData.settings[key] || '';
+      if (SELECT_SETTINGS[key]) {
+        const buttons = SELECT_SETTINGS[key].map(opt => {
+          const isActive = opt === currentValue;
+          const style = isActive
+            ? 'background-color:#0a7a3a; border:2px solid #fff;'
+            : '';
+          return `<button type="button" style="width:auto; padding:8px 12px; ${style}" data-select-key="${key}" data-select-value="${opt}">${opt}</button>`;
+        }).join('');
+        return `<label>${key}</label><div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">${buttons}</div>`;
+      } else {
+        return `<label>${key}</label><div style="display:flex; gap:6px;">
+          <input type="text" value="${currentValue.replace(/"/g,'&quot;')}" id="setting_${key}" style="flex:1;">
+          <button style="width:auto; padding:10px 14px;" data-key="${key}">Save</button>
+        </div>`;
+      }
+    }).join('') + `<p style="font-size:12px; opacity:0.7; text-align:center; margin-top:8px;">master_lock is currently: <b>${settingsData.settings.master_lock}</b> (edit the Sheet directly to change)</p>`;
+
+    settingsList.querySelectorAll('button[data-select-key]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        await callBackend('adminUpdateSetting', { password, key: btn.dataset.selectKey, value: btn.dataset.selectValue });
+        loadAdminContent();
+      });
+    });
 
     settingsList.querySelectorAll('button[data-key]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -539,6 +574,26 @@ function renderAdmin() {
         `).join('')}
       </table>
     `;
+
+    document.getElementById('resetKeepBtn').addEventListener('click', async () => {
+      const resetOutput = document.getElementById('resetOutput');
+      const resetPassword = document.getElementById('resetPasswordInput').value;
+      if (!resetPassword) { showOutput(resetOutput, 'Enter the reset password first.', 'error'); return; }
+      if (!confirm('Are you sure? This will set ALL players back to active and permanently clear elimination history. This cannot be undone.')) return;
+      const data = await callBackend('adminResetKeepPlayers', { password, resetPassword });
+      showOutput(resetOutput, data.message, data.success ? 'success' : 'error');
+      if (data.success) loadAdminContent();
+    });
+
+    document.getElementById('resetWipeBtn').addEventListener('click', async () => {
+      const resetOutput = document.getElementById('resetOutput');
+      const resetPassword = document.getElementById('resetPasswordInput').value;
+      if (!resetPassword) { showOutput(resetOutput, 'Enter the reset password first.', 'error'); return; }
+      if (!confirm('Are you sure? This will PERMANENTLY DELETE all players. Everyone will need to sign up again. This cannot be undone.')) return;
+      const data = await callBackend('adminResetFullWipe', { password, resetPassword });
+      showOutput(resetOutput, data.message, data.success ? 'success' : 'error');
+      if (data.success) loadAdminContent();
+    });
   }
 }
 </script>
