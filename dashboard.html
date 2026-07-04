@@ -116,13 +116,62 @@ function setLoading(loadingEl, isLoading) {
 
 // ---- router ----
 const params = new URLSearchParams(window.location.search);
-const view = params.get('view') || 'dashboard';
+const view = params.get('view');
 const app = document.getElementById('app');
 
 if (view === 'signup') renderSignup();
+else if (view === 'dashboard') renderDashboard();
 else if (view === 'feed') renderFeed();
 else if (view === 'admin') renderAdmin();
-else renderDashboard();
+else renderLanding();
+
+async function renderLanding() {
+  app.innerHTML = `<div class="form-section" id="landingBox"><p style="text-align:center;">Loading...</p></div>`;
+  const box = document.getElementById('landingBox');
+  try {
+    const data = await callBackend('getPublicStatus');
+
+    if (data.masterLock === 'TRUE') {
+      box.innerHTML = `<p style="text-align:center;">The game is temporarily down. Check back soon.</p>`;
+      return;
+    }
+
+    const signupOn = data.signupEnabled === 'TRUE';
+    const dashboardOn = data.dashboardEnabled === 'TRUE';
+
+    // Only one is on -> skip the landing page entirely and go straight there.
+    if (signupOn && !dashboardOn) {
+      window.location.href = '?view=signup';
+      return;
+    }
+    if (dashboardOn && !signupOn) {
+      window.location.href = '?view=dashboard';
+      return;
+    }
+
+    // Neither on
+    if (!signupOn && !dashboardOn) {
+      box.innerHTML = `<p style="text-align:center;">The game isn't accepting signups or dashboard activity right now. Check back soon.</p>`;
+      return;
+    }
+
+    // Both on -> show a real choice
+    let statusMsg = '';
+    if (data.gameStatus === 'not_started') statusMsg = 'Signups are open — the game hasn\'t started yet.';
+    else if (data.gameStatus === 'live') statusMsg = 'The game is live!';
+    else if (data.gameStatus === 'paused') statusMsg = 'The game is currently paused.';
+    else if (data.gameStatus === 'ended') statusMsg = 'The game has ended.';
+
+    box.innerHTML = `
+      <h2>Assassin Game</h2>
+      <p style="text-align:center;">${statusMsg}</p>
+      <button onclick="window.location.href='?view=signup'">Sign Up</button>
+      <button onclick="window.location.href='?view=dashboard'">I already have a codename</button>
+    `;
+  } catch (err) {
+    box.innerHTML = `<p style="text-align:center; color:#ff8888;">Error loading — please try again.</p>`;
+  }
+}
 
 // ============================================================
 // SIGNUP VIEW
