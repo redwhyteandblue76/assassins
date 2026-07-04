@@ -10,13 +10,10 @@
     background-color: #000;
     color: #fff;
     margin: 0;
-    padding: 20px;
+    padding: 0;
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
   }
-  #container { width: 100%; max-width: 500px; }
+  #container { width: 100%; max-width: 500px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
   h2 { text-align: center; }
   .form-section {
     background-color: #222;
@@ -83,22 +80,23 @@
   .status-eliminated { color: #ff8888; }
 
   #navbar {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 10px 0;
     background-color: #111;
     border-bottom: 2px solid #fff;
     margin-bottom: 16px;
   }
   #navbar a {
+    display: inline-block;
     color: #fff;
     text-decoration: none;
     padding: 8px 12px;
     border: 1px solid #555;
     border-radius: 4px;
     font-size: 13px;
+    margin: 4px;
   }
   #navbar a:hover {
     background-color: #333;
