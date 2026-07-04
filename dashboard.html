@@ -409,7 +409,7 @@ function renderFeed() {
         return;
       }
       list.innerHTML = data.feed.map(row =>
-        `<div class="output" style="display:block;">${row.timestamp}<br>${row.details}</div>`
+        `<div class="output" style="display:block;">${row.details}</div>`
       ).join('');
     } catch (err) {
       setLoading(loading, false);
